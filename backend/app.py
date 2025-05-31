@@ -13,8 +13,6 @@ UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
-# Allow only PDf and Docx files
-ALLOWED_EXTENSIONS = {'pdf', 'docx'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Register route
@@ -22,5 +20,5 @@ register_routes(app)
 
 
 # Run app
-if __name__== '__main__':
+if __name__ == '__main__':
     app.run(debug=True)

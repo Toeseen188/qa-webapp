@@ -4,8 +4,10 @@ from flask import request, jsonify
 from werkzeug.utils import secure_filename
 from docx import Document
 
+ALLOWED_EXTENSIONS = {'pdf', 'docx'}
 
-def extract_text_from_file(filepath):
+
+def extract_text_from_pdf(filepath):
     """
     Extract text from a PDF file using pdfplumber
     """
@@ -24,10 +26,10 @@ def extract_text_from_docx(filepath):
     return "\n".join([para.text for para in doc.paragraphs])
 
 
-
 def allowed_file(filename):
     """ check if file is PDF Or Docx """
-    return '.' in filename and filename.rsplit('.',1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def register_routes(app):
@@ -56,6 +58,34 @@ def register_routes(app):
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return jsonify({"message": f"File '{filename}' uploaded successfully"}), 200
+            return jsonify({"message":
+                            f"File '{filename}' uploaded successfully"}), 200
         else:
             return jsonify({"error": "Unsupported file type"}), 400
+
+    @app.route('/extract/<filename>', methods=['GET'])
+    def extract_from_file_text(filename):
+        """
+        Extract text from files - PDF OR docx
+        """
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        if not os.path.exists(filepath):
+            return jsonify({"error": "File not found"}), 404
+
+        ext = filename.rsplit('.', 1)[-1].lower()
+
+        try:
+            if ext == 'pdf':
+                text = extract_text_from_pdf(filepath)
+            elif ext == 'docx':
+                text = extract_from_docx(filepath)
+            else:
+                return jsonify({"error": "Unsuported file"}), 404
+
+            return jsonify({
+                "filename": filename,
+                "text_preview": text[:1000]
+                })
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
